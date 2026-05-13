@@ -246,22 +246,6 @@ export default function PaginaEditarNoticia({ params }: Props) {
                   />
                 </div>
               )}
-                    className="w-full bg-fondo border border-fondo-terciario rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primario"
-                    placeholder={
-                      formulario.video_tipo === 'youtube' ? 'https://www.youtube.com/watch?v=...' :
-                      formulario.video_tipo === 'vimeo' ? 'https://vimeo.com/...' :
-                      formulario.video_tipo === 'mp4' ? 'https://ejemplo.com/video.mp4' :
-                      'https://ejemplo.com/stream.m3u8'
-                    }
-                  />
-                  <p className="text-xs text-texto-terciario mt-1">
-                    {formulario.video_tipo === 'youtube' && 'Ejemplo: https://www.youtube.com/watch?v=dQw4w9WgXcQ'}
-                    {formulario.video_tipo === 'vimeo' && 'Ejemplo: https://vimeo.com/123456789'}
-                    {formulario.video_tipo === 'mp4' && 'URL directa al archivo MP4'}
-                    {formulario.video_tipo === 'hls' && 'URL del archivo .m3u8'}
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 
