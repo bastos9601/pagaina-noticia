@@ -1,92 +1,82 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(req: NextRequest) {
-  const targetUrl = req.nextUrl.searchParams.get('url')
-
-  if (!targetUrl) {
-    return NextResponse.json({ error: 'URL requerida' }, { status: 400 })
-  }
-
   try {
-    // Hacer la petición al servidor original
+    const targetUrl = req.nextUrl.searchParams.get('url')
+
+    if (!targetUrl) {
+      return new Response('URL no proporcionada', {
+        status: 400,
+      })
+    }
+
     const response = await fetch(targetUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Referer': new URL(targetUrl).origin,
+        'Referer': targetUrl,
       },
     })
 
     if (!response.ok) {
-      return NextResponse.json(
-        { error: `Error del servidor: ${response.status}` },
-        { status: response.status }
-      )
+      return new Response('Error obteniendo stream', {
+        status: response.status,
+      })
     }
 
-    const contentType = response.headers.get('content-type') || 'application/octet-stream'
+    const contentType = response.headers.get('content-type') || ''
 
-    // Si es un manifest m3u8, reescribir las URLs
-    if (targetUrl.includes('.m3u8')) {
-      const text = await response.text()
+    // =========================
+    // MANIFEST M3U8
+    // =========================
+    if (contentType.includes('mpegurl') || targetUrl.includes('.m3u8')) {
+      let text = await response.text()
+
       const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1)
-      const origin = req.nextUrl.origin
 
-      // Reescribir URLs en el manifest
-      const modifiedText = text
-        .split('\n')
-        .map((line) => {
-          // Ignorar comentarios y líneas vacías
-          if (line.startsWith('#') || line.trim() === '') {
-            return line
-          }
+      // Reescribir segmentos
+      text = text.replace(/^(?!#)(.+)$/gm, (line) => {
+        const trimmedLine = line.trim()
+        if (!trimmedLine) return line
 
-          // Si ya es una URL completa
-          if (line.startsWith('http://') || line.startsWith('https://')) {
-            return `${origin}/api/hls?url=${encodeURIComponent(line)}`
-          }
+        const segmentUrl = trimmedLine.startsWith('http')
+          ? trimmedLine
+          : baseUrl + trimmedLine
 
-          // Si es una URL relativa
-          const absoluteUrl = baseUrl + line.trim()
-          return `${origin}/api/hls?url=${encodeURIComponent(absoluteUrl)}`
-        })
-        .join('\n')
+        return `/api/hls?url=${encodeURIComponent(segmentUrl)}`
+      })
 
-      return new NextResponse(modifiedText, {
-        status: 200,
+      return new Response(text, {
         headers: {
           'Content-Type': 'application/vnd.apple.mpegurl',
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
           'Cache-Control': 'no-cache',
         },
       })
     }
 
-    // Para segmentos .ts y otros archivos, pasar el stream directamente
-    const arrayBuffer = await response.arrayBuffer()
+    // =========================
+    // SEGMENTOS .ts
+    // =========================
+    const buffer = await response.arrayBuffer()
 
-    return new NextResponse(arrayBuffer, {
-      status: 200,
+    return new Response(buffer, {
       headers: {
-        'Content-Type': contentType,
+        'Content-Type': response.headers.get('content-type') || 'video/mp2t',
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
         'Cache-Control': 'public, max-age=3600',
       },
     })
   } catch (error) {
     console.error('Error en proxy HLS:', error)
-    return NextResponse.json(
-      { error: 'Error al cargar el stream' },
-      { status: 500 }
-    )
+
+    return new Response('Error interno proxy', {
+      status: 500,
+    })
   }
 }
 
 export async function OPTIONS() {
-  return new NextResponse(null, {
+  return new Response(null, {
     status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',
