@@ -96,6 +96,13 @@ export default function ReproductorVideo({ canal }: Props) {
       setCargando(true)
       setError(null)
 
+      // Si la URL es HTTP y estamos en HTTPS, usar el proxy interno
+      let streamUrl = canal.url_stream
+      if (typeof window !== 'undefined' && window.location.protocol === 'https:' && streamUrl.startsWith('http://')) {
+        console.log('🔄 Stream HTTP detectado, usando proxy interno...')
+        streamUrl = `/api/hls?url=${encodeURIComponent(streamUrl)}`
+      }
+
       // Cargar HLS.js dinámicamente
       import('hls.js').then(({ default: Hls }) => {
         if (Hls.isSupported()) {
@@ -152,7 +159,7 @@ export default function ReproductorVideo({ canal }: Props) {
             startLevel: -1,
           })
 
-          hls.loadSource(canal.url_stream)
+          hls.loadSource(streamUrl)
           hls.attachMedia(videoRef.current!)
           hlsRef.current = hls
 
