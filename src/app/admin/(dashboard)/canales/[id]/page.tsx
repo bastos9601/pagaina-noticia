@@ -61,7 +61,7 @@ export default function PaginaEditarCanal({ params }: { params: Promise<{ id: st
     setGuardando(true)
 
     try {
-      await actualizarCanal(params.id, formulario)
+      await actualizarCanal(id, formulario)
       toast.success('Canal actualizado exitosamente')
       router.push('/admin/canales')
     } catch (error) {
