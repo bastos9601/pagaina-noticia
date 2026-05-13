@@ -58,7 +58,7 @@ export default async function PaginaBusqueda({ searchParams }: Props) {
           {resultados.total === 0 ? (
             <div className="text-center py-12">
               <p className="text-texto-secundario text-lg">
-                No se encontraron resultados para "{termino}"
+                No se encontraron resultados para &quot;{termino}&quot;
               </p>
               <p className="text-texto-secundario mt-2">
                 Intenta con otras palabras clave
