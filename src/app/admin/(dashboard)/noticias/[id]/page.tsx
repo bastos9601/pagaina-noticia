@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { obtenerNoticiaPorId, actualizarNoticia } from '@/servicios/noticias'
@@ -17,8 +17,8 @@ interface Props {
 }
 
 export default function PaginaEditarNoticia({ params }: Props) {
+  const { id } = use(params)
   const router = useRouter()
-  const [id, setId] = useState<string>('')
   const [cargando, setCargando] = useState(true)
   const [guardando, setGuardando] = useState(false)
   const [categorias, setCategorias] = useState<Categoria[]>([])
@@ -35,16 +35,13 @@ export default function PaginaEditarNoticia({ params }: Props) {
   })
 
   useEffect(() => {
-    params.then(p => {
-      setId(p.id)
-      cargarDatos(p.id)
-    })
-  }, [params])
+    cargarDatos()
+  }, [id])
 
-  const cargarDatos = async (noticiaId: string) => {
+  const cargarDatos = async () => {
     try {
       const [noticia, cats] = await Promise.all([
-        obtenerNoticiaPorId(noticiaId),
+        obtenerNoticiaPorId(id),
         obtenerCategorias()
       ])
 

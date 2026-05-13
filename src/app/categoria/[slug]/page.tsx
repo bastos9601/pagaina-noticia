@@ -101,7 +101,7 @@ export default async function PaginaCategoria({ params, searchParams }: Props) {
                 <div className="flex justify-center gap-2">
                   {paginaActual > 1 && (
                     <Link
-                      href={`/categoria/${params.slug}?pagina=${paginaActual - 1}`}
+                      href={`/categoria/${slug}?pagina=${paginaActual - 1}`}
                       className="px-4 py-2 bg-fondo-secundario rounded-lg hover:bg-fondo-terciario transition-colors"
                     >
                       Anterior
@@ -114,7 +114,7 @@ export default async function PaginaCategoria({ params, searchParams }: Props) {
                   
                   {paginaActual < paginacion.paginas && (
                     <Link
-                      href={`/categoria/${params.slug}?pagina=${paginaActual + 1}`}
+                      href={`/categoria/${slug}?pagina=${paginaActual + 1}`}
                       className="px-4 py-2 bg-fondo-secundario rounded-lg hover:bg-fondo-terciario transition-colors"
                     >
                       Siguiente
