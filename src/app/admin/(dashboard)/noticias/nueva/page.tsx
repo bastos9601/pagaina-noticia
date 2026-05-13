@@ -173,26 +173,8 @@ export default function PaginaNuevaNoticia() {
                 </select>
               </div>
 
-              {/* Subir video desde dispositivo */}
-              {formulario.video_tipo === 'subir' && (
-                <div>
-                  <SubidorVideo
-                    onVideoSubido={(url, thumbnail) => {
-                      setFormulario({ 
-                        ...formulario, 
-                        video_url: url,
-                        video_tipo: 'mp4', // Los videos subidos son MP4
-                        video_thumbnail: thumbnail
-                      })
-                    }}
-                    videoActual={formulario.video_url}
-                    carpeta="noticias"
-                  />
-                </div>
-              )}
-
-              {/* URL manual para otros tipos */}
-              {formulario.video_tipo && formulario.video_tipo !== 'subir' && (
+              {/* URL del video */}
+              {formulario.video_tipo && (
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     URL del Video
@@ -212,9 +194,30 @@ export default function PaginaNuevaNoticia() {
                   <p className="text-xs text-texto-terciario mt-1">
                     {formulario.video_tipo === 'youtube' && 'Ejemplo: https://www.youtube.com/watch?v=dQw4w9WgXcQ o https://youtu.be/dQw4w9WgXcQ'}
                     {formulario.video_tipo === 'vimeo' && 'Ejemplo: https://vimeo.com/123456789'}
-                    {formulario.video_tipo === 'mp4' && 'URL directa al archivo MP4'}
+                    {formulario.video_tipo === 'mp4' && 'URL directa al archivo MP4 o usa el botón de subir abajo'}
                     {formulario.video_tipo === 'hls' && 'URL del archivo .m3u8 para streaming HLS'}
                   </p>
+                </div>
+              )}
+
+              {/* Subir video desde dispositivo (solo para MP4) */}
+              {formulario.video_tipo === 'mp4' && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium mb-2">
+                    O sube un video desde tu dispositivo
+                  </label>
+                  <SubidorVideo
+                    onVideoSubido={(url, thumbnail) => {
+                      setFormulario({ 
+                        ...formulario, 
+                        video_url: url,
+                        video_tipo: 'mp4',
+                        video_thumbnail: thumbnail
+                      })
+                    }}
+                    videoActual={formulario.video_url}
+                    carpeta="noticias"
+                  />
                 </div>
               )}
             </div>
