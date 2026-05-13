@@ -6,23 +6,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://tu-sitio.netlify.app'
 
   // Páginas estáticas
-  const rutas = [
+  const rutas: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: new Date(),
-      changeFrequency: 'daily' as const,
+      changeFrequency: 'daily',
       priority: 1,
     },
     {
       url: `${baseUrl}/noticias`,
       lastModified: new Date(),
-      changeFrequency: 'hourly' as const,
+      changeFrequency: 'hourly',
       priority: 0.9,
     },
     {
       url: `${baseUrl}/canales`,
       lastModified: new Date(),
-      changeFrequency: 'daily' as const,
+      changeFrequency: 'daily',
       priority: 0.8,
     },
   ]
