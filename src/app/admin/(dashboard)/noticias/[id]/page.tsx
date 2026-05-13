@@ -238,7 +238,7 @@ export default function PaginaEditarNoticia({ params }: Props) {
                         ...formulario, 
                         video_url: url,
                         video_tipo: 'mp4',
-                        video_thumbnail: thumbnail
+                        video_thumbnail: thumbnail || undefined
                       })
                     }}
                     videoActual={formulario.video_url}
