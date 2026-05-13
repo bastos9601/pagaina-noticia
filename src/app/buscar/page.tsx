@@ -8,11 +8,12 @@ import Link from 'next/link'
 export const revalidate = 0
 
 interface Props {
-  searchParams: { q?: string }
+  searchParams: Promise<{ q?: string }>
 }
 
 export default async function PaginaBusqueda({ searchParams }: Props) {
-  const termino = searchParams.q || ''
+  const { q } = await searchParams
+  const termino = q || ''
   
   if (!termino) {
     return (
