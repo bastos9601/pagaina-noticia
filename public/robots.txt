@@ -1,0 +1,6 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Disallow: /admin/
+
+Sitemap: https://tu-sitio.netlify.app/sitemap.xml
