@@ -26,8 +26,8 @@ export default function ReproductorVideo({ canal }: Props) {
       contenedorRef.current.requestFullscreen().then(() => {
         setPantallaCompleta(true)
         // Rotar a horizontal en móviles
-        if (screen.orientation && screen.orientation.lock) {
-          screen.orientation.lock('landscape').catch(() => {})
+        if (screen.orientation && 'lock' in screen.orientation) {
+          (screen.orientation as any).lock('landscape').catch(() => {})
         }
       }).catch((err) => {
         console.error('Error al entrar en pantalla completa:', err)
@@ -36,8 +36,8 @@ export default function ReproductorVideo({ canal }: Props) {
       document.exitFullscreen().then(() => {
         setPantallaCompleta(false)
         // Volver a orientación natural
-        if (screen.orientation && screen.orientation.unlock) {
-          screen.orientation.unlock()
+        if (screen.orientation && 'unlock' in screen.orientation) {
+          (screen.orientation as any).unlock()
         }
       })
     }
