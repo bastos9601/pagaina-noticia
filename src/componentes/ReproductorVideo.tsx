@@ -15,6 +15,22 @@ export default function ReproductorVideo({ canal }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(true)
   const manifestCargadoRef = useRef(false)
+  const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Auto-ocultar error después de 3 segundos
+  useEffect(() => {
+    if (error) {
+      errorTimeoutRef.current = setTimeout(() => {
+        setError(null)
+      }, 3000)
+    }
+
+    return () => {
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current)
+      }
+    }
+  }, [error])
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null
@@ -84,19 +100,56 @@ export default function ReproductorVideo({ canal }: Props) {
       import('hls.js').then(({ default: Hls }) => {
         if (Hls.isSupported()) {
           const hls = new Hls({
+            debug: false,
             enableWorker: true,
-            lowLatencyMode: false,
-            maxBufferLength: 30,
-            maxMaxBufferLength: 60,
-            manifestLoadingTimeOut: 20000,
-            manifestLoadingMaxRetry: 6,
-            levelLoadingTimeOut: 20000,
-            levelLoadingMaxRetry: 6,
-            fragLoadingTimeOut: 30000,
-            fragLoadingMaxRetry: 8,
-            xhrSetup: function (xhr: any, url: string) {
+            lowLatencyMode: true,
+            backBufferLength: 90,
+            
+            // Configuración optimizada para live streaming
+            liveSyncDurationCount: 2,
+            liveMaxLatencyDurationCount: Infinity,
+            liveDurationInfinity: true,
+            highBufferWatchdogPeriod: 1,
+            
+            // Buffer más grande para evitar interrupciones
+            maxBufferLength: 90,
+            maxMaxBufferLength: 180,
+            maxBufferSize: 90 * 1000 * 1000,
+            maxBufferHole: 0.3,
+            
+            // Timeouts y reintentos MUY agresivos
+            manifestLoadingTimeOut: 8000,
+            manifestLoadingMaxRetry: 20,
+            manifestLoadingRetryDelay: 500,
+            manifestLoadingMaxRetryTimeout: 64000,
+            
+            levelLoadingTimeOut: 8000,
+            levelLoadingMaxRetry: 20,
+            levelLoadingRetryDelay: 500,
+            levelLoadingMaxRetryTimeout: 64000,
+            
+            fragLoadingTimeOut: 15000,
+            fragLoadingMaxRetry: 20,
+            fragLoadingRetryDelay: 500,
+            fragLoadingMaxRetryTimeout: 64000,
+            
+            // Configuración de red
+            xhrSetup: function (xhr: any) {
               xhr.withCredentials = false
+              xhr.timeout = 15000
             },
+            
+            // Recuperación automática
+            startFragPrefetch: true,
+            testBandwidth: true,
+            progressive: true,
+            
+            // ABR (Adaptive Bitrate) más conservador para estabilidad
+            abrEwmaDefaultEstimate: 500000,
+            abrBandWidthFactor: 0.8,
+            abrBandWidthUpFactor: 0.6,
+            abrMaxWithRealBitrate: false,
+            startLevel: -1,
           })
 
           hls.loadSource(canal.url_stream)
@@ -115,51 +168,107 @@ export default function ReproductorVideo({ canal }: Props) {
             })
           })
 
-          hls.on(Hls.Events.ERROR, (event, data) => {
-            console.error('HLS Error:', data)
+          hls.on(Hls.Events.ERROR, (_event, data) => {
+            // Validar que data existe y tiene las propiedades necesarias
+            if (!data || typeof data !== 'object') {
+              console.log('Error de HLS sin datos')
+              return
+            }
+            
+            console.log('HLS Error:', data.type, data.details, data.fatal)
             
             if (data.fatal) {
-              let errorMsg = 'Error al reproducir'
-              
               switch (data.type) {
                 case Hls.ErrorTypes.NETWORK_ERROR:
-                  errorMsg = 'Error de conexión'
-                  console.log('Error de red, intentando recuperar...')
-                  setTimeout(() => {
-                    if (hlsRef.current) {
-                      hls.startLoad()
-                    }
-                  }, 2000)
+                  console.log('Error de red fatal, recuperando...')
+                  if (hlsRef.current) {
+                    hls.startLoad()
+                  }
                   break
                   
                 case Hls.ErrorTypes.MEDIA_ERROR:
-                  errorMsg = 'Error de reproducción'
-                  console.log('Error de media, intentando recuperar...')
+                  console.log('Error de media fatal, recuperando...')
                   hls.recoverMediaError()
+                  setTimeout(() => {
+                    if (hlsRef.current && videoRef.current?.error) {
+                      hls.recoverMediaError()
+                    }
+                  }, 500)
                   break
                   
                 default:
-                  errorMsg = 'Stream no disponible'
-                  if (timeoutId) clearTimeout(timeoutId)
-                  setCargando(false)
+                  console.log('Error fatal, recargando stream...')
+                  setTimeout(() => {
+                    if (hlsRef.current && videoRef.current) {
+                      hls.destroy()
+                      const newHls = new Hls({
+                        debug: false,
+                        enableWorker: true,
+                        lowLatencyMode: true,
+                        liveDurationInfinity: true,
+                        manifestLoadingMaxRetry: 20,
+                        levelLoadingMaxRetry: 20,
+                        fragLoadingMaxRetry: 20,
+                      })
+                      newHls.loadSource(canal.url_stream)
+                      newHls.attachMedia(videoRef.current)
+                      hlsRef.current = newHls
+                    }
+                  }, 1000)
                   break
               }
-              
-              setError(errorMsg)
             }
           })
 
-          // Timeout más largo
+          // Monitorear el estado del buffer
+          hls.on(Hls.Events.BUFFER_APPENDING, () => {
+            // Buffer agregándose correctamente
+            if (cargando) setCargando(false)
+          })
+
+          // Timeout para carga inicial
           timeoutId = setTimeout(() => {
             if (!manifestCargadoRef.current) {
-              setError('El stream está tardando demasiado. Verifica que la URL sea correcta y que el stream esté disponible.')
+              setError('El stream está tardando demasiado')
               setCargando(false)
               if (hlsRef.current) {
                 hlsRef.current.destroy()
                 hlsRef.current = null
               }
             }
-          }, 30000) // 30 segundos
+          }, 30000)
+
+          // Detectar cuando el stream se detiene y reiniciar
+          let lastTime = 0
+          let stallCount = 0
+          const checkStall = setInterval(() => {
+            if (videoRef.current && !videoRef.current.paused) {
+              const currentTime = videoRef.current.currentTime
+              if (currentTime === lastTime && !videoRef.current.seeking) {
+                stallCount++
+                if (stallCount > 2) {
+                  console.log('Stream detenido, reiniciando...')
+                  if (hlsRef.current) {
+                    hlsRef.current.startLoad()
+                  }
+                  stallCount = 0
+                }
+              } else {
+                stallCount = 0
+              }
+              lastTime = currentTime
+            }
+          }, 1500)
+
+          // Limpiar interval y timeout al desmontar
+          return () => {
+            if (timeoutId) clearTimeout(timeoutId)
+            clearInterval(checkStall)
+            if (hlsRef.current) {
+              hlsRef.current.destroy()
+              hlsRef.current = null
+            }
+          }
 
         } else if (videoRef.current?.canPlayType('application/vnd.apple.mpegurl')) {
           // Safari nativo
@@ -300,25 +409,6 @@ export default function ReproductorVideo({ canal }: Props) {
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-primario border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
             <p className="text-white text-sm">Cargando stream...</p>
-          </div>
-        </div>
-      )}
-      
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-10">
-          <div className="text-center px-4 max-w-md">
-            <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-              <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <p className="text-white text-sm mb-3">No se puede reproducir este stream</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-primario hover:bg-primario-oscuro text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            >
-              Reintentar
-            </button>
           </div>
         </div>
       )}

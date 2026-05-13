@@ -9,6 +9,7 @@ const enlaces = [
   { href: '/admin', label: 'Dashboard', icono: '📊' },
   { href: '/admin/noticias', label: 'Noticias', icono: '📰' },
   { href: '/admin/canales', label: 'Canales', icono: '📺' },
+  { href: '/admin/servidor-canales', label: 'Servidor Streaming', icono: '🖥️' },
   { href: '/admin/categorias', label: 'Categorías', icono: '🏷️' },
   { href: '/admin/publicidad', label: 'Publicidad', icono: '📢' },
 ]

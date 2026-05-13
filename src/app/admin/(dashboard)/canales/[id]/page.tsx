@@ -7,6 +7,7 @@ import { obtenerCanalPorId, actualizarCanal } from '@/servicios/canales'
 import { Canal, FormularioCanal } from '@/tipos'
 import toast from 'react-hot-toast'
 import Cargador from '@/componentes/Cargador'
+import SubidorImagen from '@/componentes/SubidorImagen'
 
 export default function PaginaEditarCanal({ params }: { params: { id: string } }) {
   const router = useRouter()
@@ -150,13 +151,22 @@ export default function PaginaEditarCanal({ params }: { params: { id: string } }
           {/* Logo */}
           <div>
             <label className="block text-sm font-medium mb-2">
-              URL del Logo
+              Logo del Canal
             </label>
+            <SubidorImagen
+              onImagenSubida={(url) => setFormulario({ ...formulario, logo: url })}
+              imagenActual={formulario.logo}
+              carpeta="canales"
+            />
+            <p className="text-xs text-texto-terciario mt-2">
+              O ingresa una URL directamente:
+            </p>
             <input
               type="url"
               value={formulario.logo}
               onChange={(e) => setFormulario({ ...formulario, logo: e.target.value })}
-              className="w-full bg-fondo border border-fondo-terciario rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primario"
+              className="w-full bg-fondo border border-fondo-terciario rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primario mt-2"
+              placeholder="https://ejemplo.com/logo.png"
             />
           </div>
 
