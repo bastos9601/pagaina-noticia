@@ -10,7 +10,7 @@ import type { Metadata } from 'next'
 export const revalidate = 30
 
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

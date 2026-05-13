@@ -10,8 +10,8 @@ import type { Metadata } from 'next'
 export const revalidate = 30
 
 interface Props {
-  params: { slug: string }
-  searchParams: { pagina?: string }
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ pagina?: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -32,7 +32,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PaginaCategoria({ params, searchParams }: Props) {
   const { slug } = await params
-  const paginaActual = parseInt(searchParams.pagina || '1')
+  const { pagina } = await searchParams
+  const paginaActual = parseInt(pagina || '1')
   
   const [categoria, categorias] = await Promise.all([
     obtenerCategoriaPorSlug(slug),

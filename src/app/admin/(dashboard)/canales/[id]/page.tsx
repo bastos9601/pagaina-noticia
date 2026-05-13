@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { obtenerCanalPorId, actualizarCanal } from '@/servicios/canales'
@@ -9,7 +9,8 @@ import toast from 'react-hot-toast'
 import Cargador from '@/componentes/Cargador'
 import SubidorImagen from '@/componentes/SubidorImagen'
 
-export default function PaginaEditarCanal({ params }: { params: { id: string } }) {
+export default function PaginaEditarCanal({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const [cargando, setCargando] = useState(true)
   const [guardando, setGuardando] = useState(false)
@@ -27,11 +28,11 @@ export default function PaginaEditarCanal({ params }: { params: { id: string } }
 
   useEffect(() => {
     cargarCanal()
-  }, [params.id])
+  }, [id])
 
   const cargarCanal = async () => {
     try {
-      const datos = await obtenerCanalPorId(params.id)
+      const datos = await obtenerCanalPorId(id)
       if (datos) {
         setCanal(datos)
         setFormulario({
