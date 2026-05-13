@@ -4,15 +4,18 @@
 -- Actualizar canales que usan HTTP a HTTPS
 UPDATE canales
 SET url_stream = REPLACE(
-  REPLACE(url_stream, 'http://95.143.42.125:8080', 'https://azyleg.club:8443'),
-  'http://azyleg.club:8080', 'https://azyleg.club:8443'
+  REPLACE(
+    REPLACE(url_stream, 'http://95.143.42.125:8080', 'https://azyleg.club:8443'),
+    'http://azyleg.club:8080', 'https://azyleg.club:8443'
+  ),
+  'http://208.82.62.169:8089', 'https://208.82.62.169:8443'
 )
 WHERE url_stream LIKE 'http://%';
 
 -- Verificar los cambios
 SELECT id, nombre, url_stream
 FROM canales
-WHERE url_stream LIKE 'https://azyleg.club:8443%'
+WHERE url_stream LIKE 'https://%'
 ORDER BY nombre;
 
 -- Ver cuántos canales se actualizaron

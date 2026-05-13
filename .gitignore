@@ -4,6 +4,8 @@
 /node_modules
 /.pnp
 .pnp.js
+noticias-android-app/node_modules
+noticias-live-app/node_modules
 
 # testing
 /coverage
@@ -37,3 +39,8 @@ next-env.d.ts
 
 # netlify
 .netlify
+
+# expo
+noticias-android-app/.expo
+noticias-android-app/android
+noticias-android-app/ios

@@ -5,10 +5,16 @@ export async function GET(req: NextRequest) {
     const targetUrl = req.nextUrl.searchParams.get('url')
 
     if (!targetUrl) {
+      console.error('[HLS Proxy] URL no proporcionada')
       return new Response('URL no proporcionada', {
         status: 400,
+        headers: {
+          'Content-Type': 'text/plain',
+        },
       })
     }
+
+    console.log('[HLS Proxy] Solicitando:', targetUrl)
 
     const response = await fetch(targetUrl, {
       headers: {
@@ -17,9 +23,15 @@ export async function GET(req: NextRequest) {
       },
     })
 
+    console.log('[HLS Proxy] Respuesta:', response.status, response.statusText)
+
     if (!response.ok) {
-      return new Response('Error obteniendo stream', {
+      console.error('[HLS Proxy] Error del servidor:', response.status)
+      return new Response(`Error obteniendo stream: ${response.status}`, {
         status: response.status,
+        headers: {
+          'Content-Type': 'text/plain',
+        },
       })
     }
 
@@ -29,6 +41,7 @@ export async function GET(req: NextRequest) {
     // MANIFEST M3U8
     // =========================
     if (contentType.includes('mpegurl') || targetUrl.includes('.m3u8')) {
+      console.log('[HLS Proxy] Procesando manifest m3u8')
       let text = await response.text()
 
       const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1)
@@ -45,7 +58,10 @@ export async function GET(req: NextRequest) {
         return `/api/hls?url=${encodeURIComponent(segmentUrl)}`
       })
 
+      console.log('[HLS Proxy] Manifest procesado correctamente')
+
       return new Response(text, {
+        status: 200,
         headers: {
           'Content-Type': 'application/vnd.apple.mpegurl',
           'Access-Control-Allow-Origin': '*',
@@ -57,9 +73,11 @@ export async function GET(req: NextRequest) {
     // =========================
     // SEGMENTOS .ts
     // =========================
+    console.log('[HLS Proxy] Procesando segmento .ts')
     const buffer = await response.arrayBuffer()
 
     return new Response(buffer, {
+      status: 200,
       headers: {
         'Content-Type': response.headers.get('content-type') || 'video/mp2t',
         'Access-Control-Allow-Origin': '*',
@@ -67,10 +85,13 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error en proxy HLS:', error)
+    console.error('[HLS Proxy] Error:', error)
 
-    return new Response('Error interno proxy', {
+    return new Response(`Error interno proxy: ${error instanceof Error ? error.message : 'Unknown error'}`, {
       status: 500,
+      headers: {
+        'Content-Type': 'text/plain',
+      },
     })
   }
 }

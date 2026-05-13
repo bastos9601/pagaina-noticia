@@ -14,8 +14,46 @@ export default function ReproductorVideo({ canal }: Props) {
   const hlsRef = useRef<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [cargando, setCargando] = useState(true)
+  const [pantallaCompleta, setPantallaCompleta] = useState(false)
   const manifestCargadoRef = useRef(false)
   const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Manejar pantalla completa
+  const togglePantallaCompleta = () => {
+    if (!contenedorRef.current) return
+
+    if (!document.fullscreenElement) {
+      contenedorRef.current.requestFullscreen().then(() => {
+        setPantallaCompleta(true)
+        // Rotar a horizontal en móviles
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {})
+        }
+      }).catch((err) => {
+        console.error('Error al entrar en pantalla completa:', err)
+      })
+    } else {
+      document.exitFullscreen().then(() => {
+        setPantallaCompleta(false)
+        // Volver a orientación natural
+        if (screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock()
+        }
+      })
+    }
+  }
+
+  // Detectar cambios de pantalla completa
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setPantallaCompleta(!!document.fullscreenElement)
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    }
+  }, [])
 
   // Auto-ocultar error después de 3 segundos
   useEffect(() => {
@@ -419,6 +457,23 @@ export default function ReproductorVideo({ canal }: Props) {
           </div>
         </div>
       )}
+      
+      {/* Botón de pantalla completa */}
+      <button
+        onClick={togglePantallaCompleta}
+        className="absolute top-4 left-4 z-20 bg-black/60 hover:bg-black/80 text-white p-3 rounded-lg transition-all"
+        title={pantallaCompleta ? 'Salir de pantalla completa' : 'Pantalla completa'}
+      >
+        {pantallaCompleta ? (
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        ) : (
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+          </svg>
+        )}
+      </button>
       
       {canal.mostrar_watermark !== false && (
         <div className="absolute top-4 right-4 z-10 pointer-events-none">
