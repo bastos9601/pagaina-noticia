@@ -9,12 +9,13 @@ import Link from 'next/link'
 export const revalidate = 30
 
 interface Props {
-  searchParams: { buscar?: string; pagina?: string }
+  searchParams: Promise<{ buscar?: string; pagina?: string }>
 }
 
 export default async function PaginaNoticias({ searchParams }: Props) {
-  const terminoBusqueda = searchParams.buscar
-  const paginaActual = parseInt(searchParams.pagina || '1')
+  const { buscar, pagina } = await searchParams
+  const terminoBusqueda = buscar
+  const paginaActual = parseInt(pagina || '1')
 
   const [categorias, resultado] = await Promise.all([
     obtenerCategorias(),
